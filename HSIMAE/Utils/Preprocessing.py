@@ -79,17 +79,26 @@ def get_split_info(data, target_size, stride, num, max, min):
     return cut_locs
 
 
-def get_data_cut_file(data_path, patch_size=9, save_path=None, norm=False, GWPCA=True, ratio=1.0):
+def get_data_cut_file(
+    data_path, patch_size=9, save_path=None, 
+    norm=False, GWPCA=True, ratio=1.0,
+    nc=32, group=4
+):
     data_cubes = []
     cut_locs = []
 
     num_count = 0
     for path in tqdm(data_path):
+        print(f'Loading {path} ...')
         HSI_data = np.load(path)
+        print(f'Data shape: {HSI_data.shape}')
 
         if GWPCA:
-            HSI_data = applyGWPCA(HSI_data, nc=32, group=4, whiten=True)
+            HSI_data = applyGWPCA(HSI_data, nc=nc, group=group, whiten=True)
+            
+        print(f'GWPCA {GWPCA}, shape: {HSI_data.shape}')
         w, h, c = HSI_data.shape
+        patch_shape = (patch_size, patch_size, c)
 
         if norm:
             max_ = np.max(HSI_data)
@@ -99,10 +108,10 @@ def get_data_cut_file(data_path, patch_size=9, save_path=None, norm=False, GWPCA
             min_ = 0
 
         if num_count >= 14:
-            cut_loc = get_split_info(HSI_data, (9, 9, c), (1, 1, 1), num_count, max_, min_)
+            cut_loc = get_split_info(HSI_data, patch_shape, (1, 1, 1), num_count, max_, min_)
         else:
             print(path)
-            cut_loc = get_split_info(HSI_data, (9, 9, c), (3, 3, 1), num_count, max_, min_)
+            cut_loc = get_split_info(HSI_data, patch_shape, (3, 3, 1), num_count, max_, min_)
             cut_loc = np.array(cut_loc)
             np.random.shuffle(cut_loc)
             new_length = int(cut_loc.shape[0] * ratio)

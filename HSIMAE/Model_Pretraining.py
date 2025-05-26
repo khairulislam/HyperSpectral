@@ -56,9 +56,10 @@ class HSIdataset4PT(data.Dataset):
 
 def mask_pretraining(
     data_cubes, save_path, model_name, img_size=9, 
+    patch_size=3, in_chans=1,
     bands=32, mask_ratio=0.50, lr=5e-3, wd=5e-2, bs=512,
     epochs=100, depth=12, dim=64, s_depth=6, 
-    dec_dim=48, dec_depth=2
+    dec_dim=48, dec_depth=2, b_patch_size=8
     ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -70,8 +71,8 @@ def mask_pretraining(
     print('Network parameters: ', [dim, depth, dec_dim, dec_depth])
 
     model = HSIMAE(
-        img_size=img_size, patch_size=3, in_chans=1, 
-        bands=bands, b_patch_size=8,
+        img_size=img_size, patch_size=patch_size, in_chans=in_chans, 
+        bands=bands, b_patch_size=b_patch_size,
         embed_dim=dim, depth=depth, 
         num_heads=dim // 16, s_depth=s_depth,
         decoder_embed_dim=dec_dim, decoder_depth=dec_depth, 
@@ -149,7 +150,10 @@ if __name__ == "__main__":
     data_paths = ['../data/WashingtonDC.npy'] # ['numpy_files']  # data shape is [h, w, Bands]
 
     img_size = 9
-    data_cubes = get_data_cut_file(data_paths, patch_size=img_size, norm=False, GWPCA=True, ratio=1.0)
+    data_cubes = get_data_cut_file(
+        data_paths, patch_size=img_size, norm=False, 
+        GWPCA=True, ratio=1.0
+    )
 
     bands = 32
     mask_ratio = 0.5
